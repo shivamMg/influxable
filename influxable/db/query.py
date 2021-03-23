@@ -10,7 +10,13 @@ class RawQuery:
     def __init__(self, str_query=''):
         self.str_query = str_query
 
-    def execute(self):
+    def _resolve_for_db(self, database_name=None):
+        instance = Influxable.get_instance(database_name=database_name)
+        return instance.execute_query(query=self.str_query, method='post')
+
+    def execute(self, **kwargs):
+        if 'database_name' in kwargs:
+            return self._resolve_for_db(**kwargs)
         return self.raw_response
 
     @property
@@ -473,17 +479,17 @@ class Query(GenericQuery, RawQuery):
         prepared_query = prepared_query.strip()
         return prepared_query
 
-    def execute(self):
+    def execute(self, **kwargs):
         prepared_query = self._get_prepared_query()
         # print('prepared_query', prepared_query)
         self.str_query = prepared_query
-        return super().execute()
+        return super().execute(**kwargs)
 
     def format(self, result, parser_class=BaseSerializer, **kwargs):
         return parser_class(result, **kwargs).convert()
 
     def evaluate(self, parser_class=BaseSerializer, **kwargs):
-        result = InfluxDBResponse(self.execute())
+        result = InfluxDBResponse(self.execute(**kwargs))
         result.raise_if_error()
         formatted_result = self.format(result, parser_class, **kwargs)
         return formatted_result

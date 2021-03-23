@@ -61,6 +61,10 @@ class InfluxDBSerieResponse:
     def values(self):
         return self._raw_json_serie.get("values", None)
 
+    @property
+    def tags(self):
+        return self._raw_json_serie.get("tags", {})
+
 
 class InfluxDBErrorResponse:
     def __init__(self, raw_json):
