@@ -71,6 +71,45 @@ class PandasSerializer(BaseSerializer):
         return df
 
 
+class RowColumnSerializerV0(BaseSerializer):
+    def convert(self):
+        serie = self.response.main_serie
+        if not serie:
+            return [], []
+        columns = serie.columns
+        tags_column = list(serie.tags.keys())
+        values = []
+        columns.extend(tags_column)
+        for serie in self.response.series:
+            for value in serie.values:
+                tags = serie.tags
+                for tag_colum in tags_column:
+                    value.append(tags[tag_colum])
+            values.extend(serie.values)
+        return columns, values
+
+
+class RowColumnSerializer(BaseSerializer):
+    def convert(self):
+        serie = self.response.main_serie
+        if not serie:
+            return [], []
+        columns = [serie.columns[0]]
+        time_values = list(map(lambda x: x[0], serie.values))  # since they are unique
+        values = [time_values]
+        for i, col in enumerate(serie.columns[1:], 1):
+            for serie in self.response.series:
+                vals = list(map(lambda x: x[i], serie.values))
+                tags = getattr(serie, 'tags', {})
+                if tags:
+                    tags_names, tags_values = list(zip(*tags.items()))
+                else:
+                    tags_names, tags_values = (), ()
+                columns.append((col, ('tag_names', tags_names), ('tag_values', tags_values)))
+                values.append(vals)
+        return columns, values
+
+
 class MeasurementPointSerializer(FlatFormattedSerieSerializer):
     def __init__(self, response, measurement):
         from .measurement import MeasurementMeta

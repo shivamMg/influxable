@@ -1,4 +1,4 @@
-from . import _generate_function
+from . import _generate_function, _generate_function_with_param
 
 Abs = _generate_function('ABS')
 ACos = _generate_function('ACOS')
@@ -9,6 +9,7 @@ Ceil = _generate_function('CEIL')
 Cos = _generate_function('COS')
 CumulativeSum = _generate_function('CUMULATIVE_SUM')
 Derivative = _generate_function('DERIVATIVE')
+DerivativeWithUnit = _generate_function_with_param('DERIVATIVE')
 Difference = _generate_function('DIFFERENCE')
 Elapsed = _generate_function('ELAPSED')
 Exp = _generate_function('EXP')

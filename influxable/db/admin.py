@@ -28,10 +28,10 @@ class GenericDBAdminCommand:
         return options
 
     @staticmethod
-    def _execute_query(query, options={}):
+    def _execute_query(query, options={}, **kwargs):
         options = GenericDBAdminCommand._add_database_name_to_options(options)
         prepared_query = query.format(**options)
-        response = RawQuery(prepared_query).execute()
+        response = RawQuery(prepared_query).execute(**kwargs)
         influx_response = InfluxDBResponse(response)
         influx_response.raise_if_error()
         return influx_response
@@ -41,8 +41,9 @@ class GenericDBAdminCommand:
         query,
         parser=serializers.FlatFormattedSerieSerializer,
         options={},
+        **kwargs
     ):
-        influx_response = GenericDBAdminCommand._execute_query(query, options)
+        influx_response = GenericDBAdminCommand._execute_query(query, options, **kwargs)
         formatted_result = parser(influx_response).convert()
         return formatted_result
 
@@ -553,12 +554,12 @@ class ShowAdminCommand:
         return InfluxDBAdmin._execute_query_with_parser(query, parser)
 
     @staticmethod
-    def show_field_keys(measurements=[]):
+    def show_field_keys(measurements=[], **kwargs):
         from_clause = GenericDBAdminCommand._generate_from_clause(measurements)
         options = {'from_clause': from_clause}
         query = 'SHOW FIELD KEYS {from_clause}'
         parser = serializers.FormattedSerieSerializer
-        return InfluxDBAdmin._execute_query_with_parser(query, parser, options)
+        return InfluxDBAdmin._execute_query_with_parser(query, parser, options, **kwargs)
 
     @staticmethod
     def show_grants(user_name):
@@ -574,12 +575,12 @@ class ShowAdminCommand:
         return InfluxDBAdmin._execute_query_with_parser(query, parser)
 
     @staticmethod
-    def show_measurements(criteria=[]):
+    def show_measurements(criteria=[], **kwargs):
         where_clause = GenericDBAdminCommand._generate_where_clause(criteria)
         options = {'where_clause': where_clause}
         query = 'SHOW MEASUREMENTS {where_clause}'
         parser = serializers.FlatSimpleResultSerializer
-        return InfluxDBAdmin._execute_query_with_parser(query, parser, options)
+        return InfluxDBAdmin._execute_query_with_parser(query, parser, options, **kwargs)
 
     @staticmethod
     def show_queries():
@@ -638,12 +639,12 @@ class ShowAdminCommand:
         return InfluxDBAdmin._execute_query_with_parser(query, parser)
 
     @staticmethod
-    def show_tag_keys(measurements=[]):
+    def show_tag_keys(measurements=[], **kwargs):
         from_clause = GenericDBAdminCommand._generate_from_clause(measurements)
         options = {'from_clause': from_clause}
         query = 'SHOW TAG KEYS {from_clause}'
         parser = serializers.FormattedSerieSerializer
-        return InfluxDBAdmin._execute_query_with_parser(query, parser, options)
+        return InfluxDBAdmin._execute_query_with_parser(query, parser, options, **kwargs)
 
     @staticmethod
     def show_tag_values(key, measurements=[]):
@@ -656,6 +657,28 @@ class ShowAdminCommand:
         query = 'SHOW TAG VALUES {from_clause} WITH {key_clause}'
         parser = serializers.FormattedSerieSerializer
         return InfluxDBAdmin._execute_query_with_parser(query, parser, options)
+
+    @staticmethod
+    def show_tag_keys_with_criteria(criteria=[], **kwargs):
+        where_clause = GenericDBAdminCommand._generate_where_clause(criteria)
+        options = {
+            'where_clause': where_clause,
+        }
+        query = 'SHOW TAG KEYS {where_clause}'
+        parser = serializers.FormattedSerieSerializer
+        return InfluxDBAdmin._execute_query_with_parser(query, parser, options, **kwargs)
+
+    @staticmethod
+    def show_tag_values_with_criteria(key, criteria=[], **kwargs):
+        key_clause = 'KEY = "{key}"'.format(key=key)
+        where_clause = GenericDBAdminCommand._generate_where_clause(criteria)
+        options = {
+            'key_clause': key_clause,
+            'where_clause': where_clause,
+        }
+        query = 'SHOW TAG VALUES WITH {key_clause} {where_clause}'
+        parser = serializers.FormattedSerieSerializer
+        return InfluxDBAdmin._execute_query_with_parser(query, parser, options, **kwargs)
 
     @staticmethod
     def show_users():

@@ -16,6 +16,7 @@ class Singleton:
     """
 
     def __init__(self, decorated):
+        self.db_name_map = {}
         self._decorated = decorated
 
     def get_instance(self, *args, **kwargs):
@@ -24,6 +25,9 @@ class Singleton:
         new instance of the decorated class and calls its `__init__` method.
         On all subsequent calls, the already created instance is returned.
         """
+        db_name = kwargs.get('database_name')
+        if db_name in self.db_name_map:
+            return self.db_name_map[db_name]
         try:
             return self._instance
         except AttributeError:
@@ -31,12 +35,13 @@ class Singleton:
             return self._instance
 
     def __call__(self, *args, **kwargs):
-        if hasattr(self, '_instance'):
-            msg = 'Singletons must be accessed through `get_instance()`'
-            raise TypeError(msg)
-        else:
-            self._instance = self._decorated(*args, **kwargs)
-            return self._instance
+        db_name = kwargs.get('database_name', 'default')
+        if db_name and db_name not in self.db_name_map:
+            self.db_name_map[db_name] = self._decorated(*args, **kwargs)
+
+        if not hasattr(self, '_instance'):
+            self._instance = self.db_name_map[db_name]
+        return self.db_name_map[db_name]
 
     def __instancecheck__(self, inst):
         return isinstance(inst, self._decorated)
